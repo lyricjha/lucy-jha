@@ -151,7 +151,7 @@
     position: relative;
     overflow: hidden;
     padding: 40px 32px 56px;
-    background: linear-gradient(180deg, #E3F6FB 0%, #7FDDEC 55%, #29B6D8 100%);
+    background: linear-gradient(180deg, #DCEFF6 0%, #79B7DD 55%, #23508F 100%);
     text-align: center;
   }
 
@@ -190,7 +190,7 @@
     align-items: center;
     gap: 8px;
     padding: 24px 8px;
-    background: var(--foam-50);
+    background: var(--sand-100);
   }
 
   .fs-arrow {
@@ -223,7 +223,7 @@
     left: 0;
     right: 0;
     height: 22px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 22' preserveAspectRatio='none'%3E%3Cpath d='M0,11 Q20,2 40,11 T80,11 V22 H0 Z' fill='%231E88A6' fill-opacity='0.55'/%3E%3Cpath d='M0,16 Q20,9 40,16 T80,16 V22 H0 Z' fill='%2329B6D8' fill-opacity='0.9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 22' preserveAspectRatio='none'%3E%3Cpath d='M0,11 Q20,2 40,11 T80,11 V22 H0 Z' fill='%231E4C8C' fill-opacity='0.55'/%3E%3Cpath d='M0,16 Q20,9 40,16 T80,16 V22 H0 Z' fill='%232C5FA0' fill-opacity='0.9'/%3E%3C/svg%3E");
     background-repeat: repeat-x;
     background-size: 80px 22px;
     background-position: left center;
@@ -265,17 +265,28 @@
 
   .frame.is-active {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(0.92);
     border-color: var(--accent, var(--coral-500));
   }
 
   .frame-art {
-    height: 200px;
+    /* 원본 앨범 커버(세로 비율)를 커버 크롭할 때, 좌우로 보이는 비율에 비해
+       위아래로 보이는 비율이 대략 절반 정도가 되도록 이 박스의 가로세로비를 잡음 */
+    aspect-ratio: 16 / 9;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 64px;
     background: var(--frame-art-gradient, linear-gradient(160deg, #1e6e8c, #2fb6c7));
+  }
+
+  /* 실제 앨범 커버로 프레임 아트 영역을 꽉 채우되, 원본 속 조깅하는 사람이
+     잘 보이도록 크롭 위치를 그쪽으로 맞춘다(테두리 텍스트 등은 잘려도 무방). */
+  .frame-art-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 48% 72%;
   }
 
   .frame-card {
@@ -384,12 +395,12 @@
 
   /* ---------- Per-song themes ---------- */
   #summer-page[data-theme="jogging"] {
-    --accent: #2FB6C7;
+    --accent: #4FA9CB;
     --mood-a: #FBE9C6;
-    --mood-b: #1E6E8C;
-    --wave-a: #1E88A6;
+    --mood-b: #1E4C8C;
+    --wave-a: #2C5FA0;
     --wave-b: #FBE9C6;
-    --frame-art-gradient: linear-gradient(160deg, #FBE9C6, #1E6E8C);
+    --frame-art-gradient: linear-gradient(160deg, #FBE9C6, #1E4C8C);
     --tab-active-text: var(--navy-900);
   }
   #summer-page[data-theme="watermelon"] {
@@ -491,7 +502,9 @@
             <ul class="fs-track" id="fs-track">
               <!-- 1. 필름 슬라이드 카드 (data-role과 data-track-id 연동 완료) -->
               <li class="frame" data-role="film-slide" data-track-id="jogging" data-song="jogging">
-                <div class="frame-art">🏃</div>
+                <div class="frame-art">
+                  <img class="frame-art-cover" src="assets/panorama-cover.png" alt="LUCY 1st Mini Album PANORAMA 커버">
+                </div>
                 <div class="frame-card">
                   <h3 data-role="track-title">조깅</h3>
                   <p>파란 하늘과 바다, 야자수 아래를 달리는 상쾌한 아침의 트랙.</p>
