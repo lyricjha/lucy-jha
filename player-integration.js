@@ -64,16 +64,33 @@ function triggerPlayPause() {
 
 playPauseBtn?.addEventListener("click", triggerPlayPause);
 
-// 스페이스바는 재생/일시정지 전용 단축키로 전역에서 가로챈다.
+// 키보드 단축키: 스페이스바(재생/일시정지), 좌우 화살표(이전/다음 곡).
 // 화살표/탭 버튼 등에 포커스가 남아있는 상태에서 스페이스바를 누르면
 // 브라우저가 "포커스된 버튼"을 기본 동작으로 활성화(다음 곡 이동 등)하면서
-// 재생/일시정지와 곡 전환이 동시에 발생해 오디오가 겹치는 문제가 있었음.
+// 재생/일시정지와 곡 전환이 동시에 발생해 오디오가 겹치는 문제가 있었으므로,
+// 여기서 전역으로 가로채 단 하나의 동작만 일어나도록 한다.
 window.addEventListener("keydown", (e) => {
-  if (e.code !== "Space" && e.key !== " ") return;
   var tag = document.activeElement ? document.activeElement.tagName : "";
   if (tag === "INPUT" || tag === "TEXTAREA") return;
-  e.preventDefault();
-  triggerPlayPause();
+
+  if (e.code === "Space" || e.key === " ") {
+    e.preventDefault();
+    triggerPlayPause();
+    return;
+  }
+
+  // 물리 화살표 버튼을 그대로 클릭시켜, 경계(첫/마지막 곡)에서 비활성화되는
+  // 버튼 상태를 키보드 조작에서도 동일하게 존중한다.
+  if (e.code === "ArrowLeft" || e.key === "ArrowLeft") {
+    e.preventDefault();
+    prevArrow?.click();
+    return;
+  }
+  if (e.code === "ArrowRight" || e.key === "ArrowRight") {
+    e.preventDefault();
+    nextArrow?.click();
+    return;
+  }
 });
 
 songTabEls.forEach((el) => {
