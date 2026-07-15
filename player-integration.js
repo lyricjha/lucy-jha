@@ -53,13 +53,27 @@ audio.onChange((state) => {
 });
 
 // 이벤트 바인딩
-playPauseBtn?.addEventListener("click", () => {
+function triggerPlayPause() {
   // 재생 곡이 아직 없다면 첫 곡 로드
   if (!audio.getState().currentTrackId) {
     audio.play(TRACKS[0].id);
   } else {
     audio.togglePlay();
   }
+}
+
+playPauseBtn?.addEventListener("click", triggerPlayPause);
+
+// 스페이스바는 재생/일시정지 전용 단축키로 전역에서 가로챈다.
+// 화살표/탭 버튼 등에 포커스가 남아있는 상태에서 스페이스바를 누르면
+// 브라우저가 "포커스된 버튼"을 기본 동작으로 활성화(다음 곡 이동 등)하면서
+// 재생/일시정지와 곡 전환이 동시에 발생해 오디오가 겹치는 문제가 있었음.
+window.addEventListener("keydown", (e) => {
+  if (e.code !== "Space" && e.key !== " ") return;
+  var tag = document.activeElement ? document.activeElement.tagName : "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  e.preventDefault();
+  triggerPlayPause();
 });
 
 songTabEls.forEach((el) => {

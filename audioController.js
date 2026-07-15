@@ -25,7 +25,7 @@ export function createAudioController(tracks = TRACKS) {
   let currentTrackId = null;
   let isPlaying = false;
   let isTransitioning = false;
-  let fadeTimer = null;
+  const fadeTimers = new Map(); // deck -> intervalId, per-deck so one fade never cancels another deck's fade
 
   const listeners = new Set();
 
@@ -61,27 +61,29 @@ export function createAudioController(tracks = TRACKS) {
   bindTimeUpdates(deckA);
   bindTimeUpdates(deckB);
 
-  function clearFadeTimer() {
-    if (fadeTimer) {
-      clearInterval(fadeTimer);
-      fadeTimer = null;
+  function clearFadeTimer(deck) {
+    const timer = fadeTimers.get(deck);
+    if (timer) {
+      clearInterval(timer);
+      fadeTimers.delete(deck);
     }
   }
 
   function fade(deck, from, to, durationMs, onDone) {
     const steps = Math.max(1, Math.round(durationMs / FADE_STEP_MS));
     let step = 0;
-    clearFadeTimer();
-    fadeTimer = setInterval(() => {
+    clearFadeTimer(deck);
+    const timer = setInterval(() => {
       step += 1;
       const t = step / steps;
       deck.volume = from + (to - from) * t;
       if (step >= steps) {
         deck.volume = to;
-        clearFadeTimer();
+        clearFadeTimer(deck);
         if (onDone) onDone();
       }
     }, FADE_STEP_MS);
+    fadeTimers.set(deck, timer);
   }
 
   function play(trackId) {
@@ -179,7 +181,8 @@ export function createAudioController(tracks = TRACKS) {
   }
 
   function destroy() {
-    clearFadeTimer();
+    fadeTimers.forEach((timer) => clearInterval(timer));
+    fadeTimers.clear();
     listeners.clear();
     deckA.pause();
     deckB.pause();

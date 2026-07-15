@@ -632,6 +632,9 @@
   requestAnimationFrame(drawWaveform);
 
   function positionTrack(animate) {
+    // 드래그 중에는 pointermove가 매 프레임 transform을 직접 픽셀 단위로 제어하므로
+    // 여기서 다시 위치를 잡으면 손가락/마우스 이동과 어긋나며 싸우게 된다.
+    if (state.isDragging) return;
     var viewport = fsTrack.parentElement;
     var activeFrame = frames[state.currentSongIndex];
     if (!activeFrame) return;
@@ -664,9 +667,12 @@
   };
 
   // ---------- Drag / swipe ----------
+  var SONG_IDS = ["jogging", "watermelon", "straightline", "flare"];
   var dragStartX = 0;
   var dragStartOffset = 0;
-  var dragMoved = 0;
+  var dragBaseIndex = 0;
+  var dragLiveIndex = 0;
+  var dragStepDistance = 0;
 
   function getCurrentTranslateX() {
     var transform = window.getComputedStyle(fsTrack).transform;
@@ -680,11 +686,19 @@
     return 0;
   }
 
+  function switchToIndex(index) {
+    var targetId = SONG_IDS[index];
+    var targetBtn = document.querySelector("[data-role='song-tab'][data-track-id='" + targetId + "']");
+    if (targetBtn) targetBtn.click();
+  }
+
   fsTrack.addEventListener("pointerdown", function (e) {
     state.isDragging = true;
-    dragMoved = 0;
     dragStartX = e.clientX;
     dragStartOffset = getCurrentTranslateX();
+    dragBaseIndex = state.currentSongIndex;
+    dragLiveIndex = state.currentSongIndex;
+    dragStepDistance = frames.length > 1 ? (frames[1].offsetLeft - frames[0].offsetLeft) : 0;
     fsTrack.classList.add("is-dragging");
     fsTrack.setPointerCapture(e.pointerId);
   });
@@ -692,30 +706,27 @@
   fsTrack.addEventListener("pointermove", function (e) {
     if (!state.isDragging) return;
     var delta = e.clientX - dragStartX;
-    dragMoved = delta;
     fsTrack.style.transform = "translateX(" + (dragStartOffset + delta) + "px)";
+
+    // 드래그 도중 이웃 카드가 화면 중앙을 지나가는 순간, 실시간으로 그 카드의
+    // 곡으로 전환한다(이전 곡은 크로스페이드로 자동으로 꺼짐).
+    if (dragStepDistance > 0) {
+      var rawIndex = dragBaseIndex - delta / dragStepDistance;
+      var candidateIndex = Math.max(0, Math.min(frames.length - 1, Math.round(rawIndex)));
+      if (candidateIndex !== dragLiveIndex) {
+        dragLiveIndex = candidateIndex;
+        switchToIndex(candidateIndex);
+      }
+    }
   });
 
   function endDrag(e) {
     if (!state.isDragging) return;
     state.isDragging = false;
     fsTrack.classList.remove("is-dragging");
-    var activeFrame = frames[state.currentSongIndex];
-    var frameWidth = activeFrame ? activeFrame.getBoundingClientRect().width : 300;
-    var threshold = frameWidth * 0.15;
-    
-    var targetIndex = state.currentSongIndex;
-    if (dragMoved > threshold) {
-      targetIndex = Math.max(0, state.currentSongIndex - 1);
-    } else if (dragMoved < -threshold) {
-      targetIndex = Math.min(frames.length - 1, state.currentSongIndex + 1);
-    }
-    
-    // 글로벌 연동을 위해 trigger 클릭 발생
-    var songs = ["jogging", "watermelon", "straightline", "flare"];
-    var targetId = songs[targetIndex];
-    var targetBtn = document.querySelector("[data-role='song-tab'][data-track-id='" + targetId + "']");
-    if (targetBtn) targetBtn.click();
+    // 실제 카드 전환은 pointermove 중 실시간으로 이미 처리되었으므로,
+    // 여기서는 현재 활성 카드 기준으로 위치만 깔끔하게 스냅한다.
+    positionTrack(true);
   }
 
   fsTrack.addEventListener("pointerup", endDrag);
