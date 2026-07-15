@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUCY — SUMMER</title>
+<style>
+  /* System fonts only: this file is meant to be opened directly via file://
+     with no guaranteed network, so no webfont <link> is used. */
+  :root {
+    --navy-900: #0B2340;
+    --cyan-500: #29B6D8;
+    --foam-50: #F4FAFA;
+    --sand-100: #F2E8D5;
+    --coral-500: #FF6B5B;
+
+    --font-display: Georgia, "Nanum Myeongjo", "Times New Roman", serif;
+    --font-body: -apple-system, "Segoe UI", "Malgun Gothic", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: var(--foam-50);
+    color: var(--navy-900);
+    font-family: var(--font-body);
+  }
+
+  button { font-family: inherit; }
+
+  /* ---------- App shell ---------- */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0;
+    background: #FFFFFF;
+    border-right: 1px solid rgba(11, 35, 64, 0.08);
+  }
+
+  .season-btn {
+    width: 60px;
+    height: 76px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(11, 35, 64, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  .season-btn .glyph { font-size: 20px; }
+
+  .season-btn:not(:disabled):hover {
+    background: rgba(41, 182, 216, 0.14);
+    color: var(--navy-900);
+  }
+
+  .season-btn[aria-pressed="true"] {
+    background: var(--coral-500);
+    color: var(--navy-900);
+    font-weight: 700;
+  }
+
+  .season-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .season-btn .caption {
+    font-size: 9px;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Main view ---------- */
+  .main-view {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  #placeholder-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    text-align: center;
+    background: #fff;
+    padding: 24px;
+  }
+  #placeholder-view[hidden] { display: none; }
+
+  #placeholder-view .cover-logo {
+    max-width: 640px;
+    width: 60%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
+    animation: cover-fade-in 900ms ease both;
+  }
+
+  #placeholder-view .cover-seasons {
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(20, 36, 58, 0.35);
+  }
+
+  #placeholder-view .cover-seasons .is-live {
+    color: var(--coral-500);
+    font-weight: 700;
+  }
+
+  @keyframes cover-fade-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  #summer-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  #summer-page[hidden] { display: none; }
+
+  /* ---------- Header ---------- */
+  .summer-header {
+    position: relative;
+    overflow: hidden;
+    padding: 40px 32px 56px;
+    background: linear-gradient(180deg, #E3F6FB 0%, #7FDDEC 55%, #29B6D8 100%);
+    text-align: center;
+  }
+
+  .summer-header svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .logo {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-size: clamp(32px, 6vw, 56px);
+    letter-spacing: 0.3em;
+    font-weight: 700;
+    margin: 0;
+    color: var(--navy-900);
+  }
+
+  .logo-sub {
+    position: relative;
+    z-index: 1;
+    margin: 6px 0 0;
+    font-size: 12px;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(11, 35, 64, 0.65);
+  }
+
+  /* ---------- Film strip ---------- */
+  .filmstrip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 8px;
+    background: var(--foam-50);
+  }
+
+  .fs-arrow {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(11, 35, 64, 0.15);
+    background: #FFFFFF;
+    color: var(--navy-900);
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(11, 35, 64, 0.08);
+  }
+  .fs-arrow:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+  .fs-arrow:not(:disabled):hover { background: rgba(41, 182, 216, 0.12); }
+
+  .fs-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  .fs-viewport::before,
+  .fs-viewport::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background-color: var(--navy-900);
+    background-image: radial-gradient(circle, var(--foam-50) 0 6px, transparent 7px);
+    background-size: 34px 100%;
+    background-repeat: repeat-x;
+    background-position: center;
+    z-index: 2;
+  }
+  .fs-viewport::before { top: 0; }
+  .fs-viewport::after { bottom: 0; }
+
+  .fs-track {
+    display: flex;
+    align-items: stretch;
+    list-style: none;
+    margin: 0;
+    padding: 24px 0;
+    transition: transform 420ms cubic-bezier(.22,.8,.28,1);
+    will-change: transform;
+    cursor: grab;
+  }
+  .fs-track.is-dragging {
+    transition: none;
+    cursor: grabbing;
+  }
+
+  .frame {
+    flex: none;
+    width: 72%;
+    max-width: 420px;
+    margin: 0 10px;
+    opacity: 0.45;
+    transform: scale(0.9);
+    transition: opacity 300ms ease, transform 300ms ease;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow: 0 8px 24px rgba(11, 35, 64, 0.1);
+    border: 2px solid transparent;
+    user-select: none;
+  }
+
+  .frame.is-active {
+    opacity: 1;
+    transform: scale(1);
+    border-color: var(--accent, var(--coral-500));
+  }
+
+  .frame-art {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    background: var(--frame-art-gradient, linear-gradient(160deg, #1e6e8c, #2fb6c7));
+  }
+
+  .frame-card {
+    padding: 16px 18px 20px;
+  }
+
+  .frame-card h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+  }
+
+  .frame-card p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(11, 35, 64, 0.65);
+  }
+
+  /* ---------- Footer player ---------- */
+  .player-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: #FFFFFF;
+    border-top: 1px solid rgba(11, 35, 64, 0.08);
+  }
+
+  .player-tabs {
+    display: flex;
+    gap: 6px;
+    flex: none;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: none;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 35, 64, 0.18);
+    background: transparent;
+    color: rgba(11, 35, 64, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .tab-btn.is-active {
+    background: var(--accent, var(--coral-500));
+    color: var(--tab-active-text, var(--navy-900));
+    border-color: transparent;
+    font-weight: 700;
+  }
+
+  .play-toggle {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent, var(--coral-500));
+    color: var(--tab-active-text, var(--navy-900));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .waveform {
+    flex: 1;
+    height: 44px;
+    min-width: 80px;
+  }
+
+  .progress-track {
+    flex: none;
+    width: 120px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(11, 35, 64, 0.12);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent, var(--coral-500));
+    animation: progress-run 30s linear infinite;
+    animation-play-state: paused;
+  }
+
+  @keyframes progress-run {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+
+  /* ---------- Per-song themes ---------- */
+  #summer-page[data-theme="jogging"] {
+    --accent: #2FB6C7;
+    --mood-a: #FBE9C6;
+    --mood-b: #1E6E8C;
+    --wave-a: #1E88A6;
+    --wave-b: #FBE9C6;
+    --frame-art-gradient: linear-gradient(160deg, #FBE9C6, #1E6E8C);
+    --tab-active-text: var(--navy-900);
+  }
+  #summer-page[data-theme="watermelon"] {
+    --accent: #FF5A6E;
+    --mood-a: #EAFBE2;
+    --mood-b: #12A4A0;
+    --wave-a: #FF5A6E;
+    --wave-b: #3EA25A;
+    --frame-art-gradient: linear-gradient(160deg, #EAFBE2, #12A4A0);
+    --tab-active-text: var(--navy-900);
+  }
+  #summer-page[data-theme="straightline"] {
+    --accent: #B79CFF;
+    --mood-a: #F6E6FF;
+    --mood-b: #FFD9EC;
+    --wave-a: #B79CFF;
+    --wave-b: #FFD9EC;
+    --frame-art-gradient: linear-gradient(160deg, #F6E6FF, #FFD9EC);
+    --tab-active-text: var(--navy-900);
+  }
+  #summer-page[data-theme="flare"] {
+    --accent: #FF8A3D;
+    --mood-a: #46505C;
+    --mood-b: #232A33;
+    --wave-a: #A9B4C0;
+    --wave-b: #FF8A3D;
+    --frame-art-gradient: linear-gradient(160deg, #46505C, #232A33);
+    --tab-active-text: var(--navy-900);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 720px) {
+    .app-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+    }
+    .sidebar {
+      flex-direction: row;
+      width: 100%;
+      padding: 12px;
+      justify-content: center;
+    }
+    .frame { width: 88%; }
+    .player-bar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="sidebar" aria-label="계절 선택">
+      <button class="season-btn" data-season="spring" disabled aria-disabled="true">
+        <span class="glyph">🔒</span>
+        <span>봄</span>
+        <span class="caption">Soon</span>
+      </button>
+      <button class="season-btn" data-season="summer" aria-pressed="false">
+        <span class="glyph">☀️</span>
+        <span>여름</span>
+      </button>
+      <button class="season-btn" data-season="fall" disabled aria-disabled="true">
+        <span class="glyph">🔒</span>
+        <span>가을</span>
+        <span class="caption">Soon</span>
+      </button>
+      <button class="season-btn" data-season="winter" disabled aria-disabled="true">
+        <span class="glyph">🔒</span>
+        <span>겨울</span>
+        <span class="caption">Soon</span>
+      </button>
+    </nav>
+
+    <main class="main-view">
+      <section id="placeholder-view">
+        <img class="cover-logo" src="assets/lucy-logo.png" alt="LUCY">
+        <div class="cover-seasons">
+          <span>Spring</span>
+          <span class="is-live">Summer</span>
+          <span>Fall</span>
+          <span>Winter</span>
+        </div>
+      </section>
+
+      <section id="summer-page" hidden data-theme="jogging">
+        <header class="summer-header">
+          <svg viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden="true">
+            <ellipse cx="140" cy="40" rx="70" ry="18" fill="rgba(255,255,255,0.75)"></ellipse>
+            <ellipse cx="620" cy="60" rx="90" ry="20" fill="rgba(255,255,255,0.6)"></ellipse>
+            <path d="M0,150 Q100,130 200,150 T400,150 T600,150 T800,150 V200 H0 Z" fill="rgba(255,255,255,0.35)"></path>
+            <path d="M0,170 Q100,155 200,170 T400,170 T600,170 T800,170 V200 H0 Z" fill="rgba(11,35,64,0.12)"></path>
+          </svg>
+          <h1 class="logo">LUCY</h1>
+          <p class="logo-sub">Summer Sessions</p>
+        </header>
+
+        <section class="filmstrip">
+          <button class="fs-arrow prev" aria-label="이전 곡">‹</button>
+          <div class="fs-viewport">
+            <ul class="fs-track" id="fs-track">
+              <li class="frame" data-song="jogging">
+                <div class="frame-art">🏃</div>
+                <div class="frame-card">
+                  <h3>조깅</h3>
+                  <p>파란 하늘과 바다, 야자수 아래를 달리는 상쾌한 아침의 트랙.</p>
+                </div>
+              </li>
+              <li class="frame" data-song="watermelon">
+                <div class="frame-art">🍉</div>
+                <div class="frame-card">
+                  <h3>수박깨러가</h3>
+                  <p>한낮의 싱그러움, 수박밭 옆 바다를 떠올리게 하는 무드.</p>
+                </div>
+              </li>
+              <li class="frame" data-song="straightline">
+                <div class="frame-art">〰️</div>
+                <div class="frame-card">
+                  <h3>Straight Line</h3>
+                  <p>몽환적인 파스텔 톤으로 흘러가는 잔잔한 트랙.</p>
+                </div>
+              </li>
+              <li class="frame" data-song="flare">
+                <div class="frame-art">🌩️</div>
+                <div class="frame-card">
+                  <h3>Flare</h3>
+                  <p>흐린 스톰 톤 위로 터지는 강렬한 플레어.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <button class="fs-arrow next" aria-label="다음 곡">›</button>
+        </section>
+
+        <footer class="player-bar">
+          <div class="player-tabs" role="tablist">
+            <button class="tab-btn" data-song="jogging" role="tab">조깅</button>
+            <button class="tab-btn" data-song="watermelon" role="tab">수박깨러가</button>
+            <button class="tab-btn" data-song="straightline" role="tab">Straight Line</button>
+            <button class="tab-btn" data-song="flare" role="tab">Flare</button>
+          </div>
+          <button class="play-toggle" id="play-toggle" aria-label="재생">▶</button>
+          <canvas class="waveform" id="waveform"></canvas>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <audio id="bgm-audio" hidden preload="none"></audio>
+          <!-- bgm-audio is currently inert (no src). To wire real playback later:
+               set each SONGS[i].src to an audio file path, flip USE_REAL_AUDIO to true,
+               and drive progress/waveform off this element's timeupdate/ended events
+               instead of the fake rAF/CSS-keyframe simulation below. -->
+        </footer>
+      </section>
+    </main>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var USE_REAL_AUDIO = false; // flip to true once real audio files + SONGS[i].src are added
+
+  var SONGS = [
+    { id: "jogging",      title: "조깅",         freq: 1.1, amp: 0.9,  jag: 0.15, src: "" },
+    { id: "watermelon",   title: "수박깨러가",    freq: 1.6, amp: 1.0,  jag: 0.25, src: "" },
+    { id: "straightline", title: "Straight Line", freq: 0.6, amp: 0.45, jag: 0.05, src: "" },
+    { id: "flare",        title: "Flare",        freq: 2.4, amp: 1.15, jag: 0.55, src: "" }
+  ];
+
+  var state = {
+    currentSongIndex: 0,
+    isPlaying: false,
+    isDragging: false
+  };
+
+  var summerPage = document.getElementById("summer-page");
+  var placeholderView = document.getElementById("placeholder-view");
+  var fsTrack = document.getElementById("fs-track");
+  var frames = Array.prototype.slice.call(fsTrack.querySelectorAll(".frame"));
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab-btn"));
+  var prevArrow = document.querySelector(".fs-arrow.prev");
+  var nextArrow = document.querySelector(".fs-arrow.next");
+  var playToggle = document.getElementById("play-toggle");
+  var progressFill = document.getElementById("progress-fill");
+  var canvas = document.getElementById("waveform");
+  var ctx = canvas.getContext("2d");
+
+  // ---------- Sidebar ----------
+  var seasonButtons = Array.prototype.slice.call(document.querySelectorAll(".season-btn"));
+  seasonButtons.forEach(function (btn) {
+    if (btn.dataset.season === "summer") {
+      btn.addEventListener("click", showSummerPage);
+    }
+  });
+
+  function showSummerPage() {
+    placeholderView.hidden = true;
+    summerPage.hidden = false;
+    seasonButtons.forEach(function (btn) {
+      btn.setAttribute("aria-pressed", String(btn.dataset.season === "summer"));
+    });
+    requestAnimationFrame(function () {
+      positionTrack(false);
+      resizeCanvas();
+    });
+  }
+
+  // ---------- Seeded per-song waveform bars ----------
+  function seedFromString(str) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) {
+      h = (h << 5) - h + str.charCodeAt(i);
+      h |= 0;
+    }
+    return h;
+  }
+
+  function mulberry32(seed) {
+    var a = seed;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var BAR_COUNT = 40;
+  SONGS.forEach(function (song) {
+    var rng = mulberry32(seedFromString(song.id));
+    song.bars = [];
+    for (var i = 0; i < BAR_COUNT; i++) {
+      song.bars.push(0.25 + rng() * 0.75);
+    }
+  });
+
+  // ---------- Waveform rendering ----------
+  var waveTime = 0;
+  var lastFrameTs = null;
+
+  function resizeCanvas() {
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, rect.width * dpr);
+    canvas.height = Math.max(1, rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawWaveform(ts) {
+    if (lastFrameTs === null) lastFrameTs = ts;
+    var dt = (ts - lastFrameTs) / 1000;
+    lastFrameTs = ts;
+    if (state.isPlaying) waveTime += dt;
+
+    var rect = canvas.getBoundingClientRect();
+    var w = rect.width, h = rect.height;
+    ctx.clearRect(0, 0, w, h);
+
+    var song = SONGS[state.currentSongIndex];
+    var styles = getComputedStyle(summerPage);
+    var colorA = styles.getPropertyValue("--wave-a").trim() || "#29B6D8";
+    var colorB = styles.getPropertyValue("--wave-b").trim() || "#F4FAFA";
+    var gradient = ctx.createLinearGradient(0, 0, w, 0);
+    gradient.addColorStop(0, colorA);
+    gradient.addColorStop(1, colorB);
+    ctx.fillStyle = gradient;
+    ctx.globalAlpha = state.isPlaying ? 1 : 0.45;
+
+    var barW = w / BAR_COUNT;
+    for (var i = 0; i < BAR_COUNT; i++) {
+      var base = song.bars[i];
+      var wobble = Math.sin(waveTime * song.freq + i * (0.4 + song.jag)) * 0.5 + 0.5;
+      var amp = base * (0.55 + 0.45 * wobble) * song.amp;
+      var barH = Math.max(2, Math.min(1, amp) * h);
+      var x = i * barW + barW * 0.15;
+      var bw = barW * 0.7;
+      var y = (h - barH) / 2;
+      ctx.fillRect(x, y, bw, barH);
+    }
+
+    requestAnimationFrame(drawWaveform);
+  }
+  requestAnimationFrame(drawWaveform);
+
+  // ---------- Core sync: setSong / render ----------
+  function clampIndex(i) {
+    return Math.max(0, Math.min(SONGS.length - 1, i));
+  }
+
+  function setSong(index) {
+    var clamped = clampIndex(index);
+    if (clamped === state.currentSongIndex) return;
+    state.currentSongIndex = clamped;
+    render();
+  }
+
+  function positionTrack(animate) {
+    var viewport = fsTrack.parentElement;
+    var activeFrame = frames[state.currentSongIndex];
+    if (!activeFrame) return;
+    var viewportWidth = viewport.getBoundingClientRect().width;
+    var frameWidth = activeFrame.getBoundingClientRect().width;
+    var frameLeft = activeFrame.offsetLeft;
+    var offset = frameLeft - (viewportWidth - frameWidth) / 2;
+    if (animate === false) {
+      var prevTransition = fsTrack.style.transition;
+      fsTrack.style.transition = "none";
+      fsTrack.style.transform = "translateX(" + (-offset) + "px)";
+      // force reflow so the "none" transition actually applies before restoring
+      void fsTrack.offsetHeight;
+      fsTrack.style.transition = prevTransition;
+    } else {
+      fsTrack.style.transform = "translateX(" + (-offset) + "px)";
+    }
+  }
+
+  function render() {
+    var song = SONGS[state.currentSongIndex];
+
+    frames.forEach(function (frame, i) {
+      frame.classList.toggle("is-active", i === state.currentSongIndex);
+    });
+    tabs.forEach(function (tab) {
+      var isActive = tab.dataset.song === song.id;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
+    });
+
+    summerPage.dataset.theme = song.theme || song.id;
+
+    positionTrack(true);
+
+    prevArrow.disabled = state.currentSongIndex === 0;
+    nextArrow.disabled = state.currentSongIndex === SONGS.length - 1;
+
+    progressFill.style.animation = "none";
+    void progressFill.offsetHeight;
+    progressFill.style.animation = "";
+    progressFill.style.animationPlayState = state.isPlaying ? "running" : "paused";
+
+    playToggle.textContent = state.isPlaying ? "❚❚" : "▶";
+    playToggle.setAttribute("aria-label", state.isPlaying ? "일시정지" : "재생");
+  }
+
+  // map song.theme for lookups above (id doubles as theme key already)
+  SONGS.forEach(function (s) { s.theme = s.id; });
+
+  // ---------- Arrows ----------
+  prevArrow.addEventListener("click", function () { setSong(state.currentSongIndex - 1); });
+  nextArrow.addEventListener("click", function () { setSong(state.currentSongIndex + 1); });
+
+  // ---------- Footer tabs ----------
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      var idx = SONGS.findIndex(function (s) { return s.id === tab.dataset.song; });
+      if (idx >= 0) setSong(idx);
+    });
+  });
+
+  // ---------- Frame click (peeking neighbor) ----------
+  frames.forEach(function (frame, i) {
+    frame.addEventListener("click", function () {
+      if (state.isDragging) return;
+      setSong(i);
+    });
+  });
+
+  // ---------- Play / pause ----------
+  playToggle.addEventListener("click", function () {
+    state.isPlaying = !state.isPlaying;
+    render();
+  });
+
+  // ---------- Drag / swipe ----------
+  var dragStartX = 0;
+  var dragStartOffset = 0;
+  var dragMoved = 0;
+
+  function getCurrentTranslateX() {
+    var transform = window.getComputedStyle(fsTrack).transform;
+    if (transform && transform !== "none") {
+      var match = /matrix\(([^)]+)\)/.exec(transform);
+      if (match) {
+        var parts = match[1].split(",");
+        return parseFloat(parts[4]) || 0;
+      }
+    }
+    return 0;
+  }
+
+  fsTrack.addEventListener("pointerdown", function (e) {
+    state.isDragging = true;
+    dragMoved = 0;
+    dragStartX = e.clientX;
+    dragStartOffset = getCurrentTranslateX();
+    fsTrack.classList.add("is-dragging");
+    fsTrack.setPointerCapture(e.pointerId);
+  });
+
+  fsTrack.addEventListener("pointermove", function (e) {
+    if (!state.isDragging) return;
+    var delta = e.clientX - dragStartX;
+    dragMoved = delta;
+    fsTrack.style.transform = "translateX(" + (dragStartOffset + delta) + "px)";
+  });
+
+  function endDrag(e) {
+    if (!state.isDragging) return;
+    state.isDragging = false;
+    fsTrack.classList.remove("is-dragging");
+    var activeFrame = frames[state.currentSongIndex];
+    var frameWidth = activeFrame ? activeFrame.getBoundingClientRect().width : 300;
+    var threshold = frameWidth * 0.15;
+    if (dragMoved > threshold) {
+      setSong(state.currentSongIndex - 1);
+    } else if (dragMoved < -threshold) {
+      setSong(state.currentSongIndex + 1);
+    } else {
+      positionTrack(true);
+    }
+  }
+
+  fsTrack.addEventListener("pointerup", endDrag);
+  fsTrack.addEventListener("pointercancel", endDrag);
+
+  // ---------- Resize ----------
+  var resizeQueued = false;
+  window.addEventListener("resize", function () {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(function () {
+      resizeQueued = false;
+      positionTrack(false);
+      resizeCanvas();
+    });
+  });
+
+  // ---------- Init ----------
+  render();
+})();
+</script>
+</body>
+</html>
