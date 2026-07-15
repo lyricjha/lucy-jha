@@ -68,3 +68,300 @@ than re-adding whitespace margins, since that's what keeps the logo looking cris
 
 As real assets (audio files, illustrated album art, other seasons) are added, or if a build step is
 ever introduced, update this file with the relevant commands and any new architectural seams.
+
+## Other files
+
+`music.html` exists in the repo root as a standalone boilerplate HTML file — it is not linked from
+`index.html` and has no defined purpose yet. Treat it as scaffolding for future work, not part of
+the current SUMMER page architecture described above.
+## 7. BGM 재생 기능 구현 (audioController.js)
+
+### 7-1. 설계 개요
+- 재생/제어 로직만 전담하는 **독립된 모듈 `audioController.js`**로 분리 (메인 UI 코드와 결합 없음)
+- 곡 전환 시 **기존 트랙 fade-out → 정지**, **새 트랙 fade-in → 재생**이 겹쳐 진행되는 **크로스페이드** 방식
+- 재생 상태(현재 곡, 재생 여부, 전환 중 여부, 재생 시간, 진행도)는 `onChange(callback)` 구독 방식으로 브로드캐스트되어 메인 UI(파형 애니메이션, 진행 바, 탭/슬라이드 active 표시)와 끊김 없이 동기화됨
+- 크로스페이드는 두 개의 `<audio>` 엘리먼트(deckA/deckB)를 번갈아 사용해 구현 → 기존 곡이 서서히 사라지는 동안 새 곡이 겹쳐서 서서히 커지는 자연스러운 전환
+
+### 7-2. 트랙 데이터 매핑
+```js
+export const TRACKS = [
+  { id: "jogging", title: "조깅", src: "audio/jogging_short.mp3" },
+  { id: "watermelon", title: "수박깨러가", src: "audio/watermelon_short.mp3" },
+  { id: "straightline", title: "Straight Line", src: "audio/straightline_short.mp3" },
+  { id: "flare", title: "Flare", src: "audio/flare_short.mp3" },
+];
+```
+
+### 7-3. 모듈 API (`createAudioController()`이 반환하는 객체)
+| 메서드 | 설명 |
+|---|---|
+| `play(trackId)` | 해당 트랙으로 크로스페이드 전환 (같은 곡 재클릭 시 재생/일시정지 토글) |
+| `pause()` / `resume()` | 페이드아웃 정지 / 페이드인 재생 |
+| `togglePlay()` | 재생/일시정지 토글 |
+| `next()` / `prev()` | 플레이리스트 순서상 다음/이전 곡으로 전환 |
+| `seek(time)` | 재생 위치 이동 |
+| `onChange(callback)` | 상태 변경 구독, 구독 해제 함수 반환 |
+| `getState()` | 현재 상태 스냅샷 반환 |
+| `destroy()` | 리소스 정리 |
+
+`PlayerState`: `{ currentTrackId, isPlaying, isTransitioning, currentTime, duration, progress }`
+
+### 7-4. `audioController.js` 전체 코드
+```js
+export const TRACKS = [
+  { id: "jogging", title: "조깅", src: "audio/jogging_short.mp3" },
+  { id: "watermelon", title: "수박깨러가", src: "audio/watermelon_short.mp3" },
+  { id: "straightline", title: "Straight Line", src: "audio/straightline_short.mp3" },
+  { id: "flare", title: "Flare", src: "audio/flare_short.mp3" },
+];
+
+const FADE_OUT_MS = 500; // 기존 트랙 페이드아웃 시간
+const FADE_IN_MS = 700; // 새 트랙 페이드인 시간
+const FADE_STEP_MS = 20; // 페이드 갱신 간격
+
+export function createAudioController(tracks = TRACKS) {
+  const trackMap = new Map(tracks.map((t) => [t.id, t]));
+
+  const deckA = new Audio();
+  const deckB = new Audio();
+  deckA.preload = "auto";
+  deckB.preload = "auto";
+  deckA.volume = 0;
+  deckB.volume = 0;
+
+  let activeDeck = deckA;
+  let inactiveDeck = deckB;
+
+  let currentTrackId = null;
+  let isPlaying = false;
+  let isTransitioning = false;
+  let fadeTimer = null;
+
+  const listeners = new Set();
+
+  function getState() {
+    const dur = activeDeck.duration || 0;
+    const cur = activeDeck.currentTime || 0;
+    return {
+      currentTrackId,
+      isPlaying,
+      isTransitioning,
+      currentTime: cur,
+      duration: dur,
+      progress: dur > 0 ? cur / dur : 0,
+    };
+  }
+
+  function emitChange() {
+    const state = getState();
+    listeners.forEach((cb) => cb(state));
+  }
+
+  function bindTimeUpdates(deck) {
+    deck.addEventListener("timeupdate", () => {
+      if (deck === activeDeck) emitChange();
+    });
+    deck.addEventListener("ended", () => {
+      if (deck === activeDeck) {
+        isPlaying = false;
+        emitChange();
+      }
+    });
+  }
+  bindTimeUpdates(deckA);
+  bindTimeUpdates(deckB);
+
+  function clearFadeTimer() {
+    if (fadeTimer) {
+      clearInterval(fadeTimer);
+      fadeTimer = null;
+    }
+  }
+
+  function fade(deck, from, to, durationMs, onDone) {
+    const steps = Math.max(1, Math.round(durationMs / FADE_STEP_MS));
+    let step = 0;
+    clearFadeTimer();
+    fadeTimer = setInterval(() => {
+      step += 1;
+      const t = step / steps;
+      deck.volume = from + (to - from) * t;
+      if (step >= steps) {
+        deck.volume = to;
+        clearFadeTimer();
+        if (onDone) onDone();
+      }
+    }, FADE_STEP_MS);
+  }
+
+  function play(trackId) {
+    const track = trackMap.get(trackId);
+    if (!track) return;
+
+    if (trackId === currentTrackId) {
+      togglePlay();
+      return;
+    }
+
+    isTransitioning = true;
+    emitChange();
+
+    const outgoing = activeDeck;
+    const incoming = inactiveDeck;
+
+    incoming.src = track.src;
+    incoming.currentTime = 0;
+    incoming.volume = 0;
+
+    const startIncoming = () => {
+      incoming.play().catch((err) => console.warn("[audioController] play() 실패:", err));
+    };
+
+    if (isPlaying && !outgoing.paused) {
+      fade(outgoing, outgoing.volume, 0, FADE_OUT_MS, () => {
+        outgoing.pause();
+      });
+    }
+
+    startIncoming();
+    fade(incoming, 0, 1, FADE_IN_MS, () => {
+      isTransitioning = false;
+      emitChange();
+    });
+
+    activeDeck = incoming;
+    inactiveDeck = outgoing;
+    currentTrackId = trackId;
+    isPlaying = true;
+    emitChange();
+  }
+
+  function pause() {
+    if (!isPlaying) return;
+    fade(activeDeck, activeDeck.volume, 0, FADE_OUT_MS, () => {
+      activeDeck.pause();
+    });
+    isPlaying = false;
+    emitChange();
+  }
+
+  function resume() {
+    if (isPlaying || !currentTrackId) return;
+    activeDeck
+      .play()
+      .then(() => {
+        fade(activeDeck, 0, 1, FADE_IN_MS);
+        isPlaying = true;
+        emitChange();
+      })
+      .catch((err) => console.warn("[audioController] resume() 실패:", err));
+  }
+
+  function togglePlay() {
+    if (isPlaying) pause();
+    else resume();
+  }
+
+  function next() {
+    const ids = tracks.map((t) => t.id);
+    const idx = ids.indexOf(currentTrackId);
+    const nextId = ids[(idx + 1) % ids.length];
+    play(nextId);
+  }
+
+  function prev() {
+    const ids = tracks.map((t) => t.id);
+    const idx = ids.indexOf(currentTrackId);
+    const prevId = ids[(idx - 1 + ids.length) % ids.length];
+    play(prevId);
+  }
+
+  function seek(time) {
+    if (!activeDeck.duration) return;
+    activeDeck.currentTime = Math.min(Math.max(0, time), activeDeck.duration);
+    emitChange();
+  }
+
+  function onChange(callback) {
+    listeners.add(callback);
+    callback(getState());
+    return () => listeners.delete(callback);
+  }
+
+  function destroy() {
+    clearFadeTimer();
+    listeners.clear();
+    deckA.pause();
+    deckB.pause();
+    deckA.src = "";
+    deckB.src = "";
+  }
+
+  return {
+    tracks,
+    play,
+    pause,
+    resume,
+    togglePlay,
+    next,
+    prev,
+    seek,
+    onChange,
+    getState,
+    destroy,
+  };
+}
+```
+
+### 7-5. 메인 플레이어 UI 연결 예시 (`player-integration.js`)
+```js
+import { createAudioController, TRACKS } from "./audioController.js";
+
+const audio = createAudioController();
+
+const playPauseBtn = document.querySelector("[data-role='play-pause']");
+const trackTitleEl = document.querySelector("[data-role='track-title']");
+const progressBarEl = document.querySelector("[data-role='progress-bar']");
+const waveformEl = document.querySelector("[data-role='waveform']");
+const songTabEls = document.querySelectorAll("[data-role='song-tab']");
+const filmSlideEls = document.querySelectorAll("[data-role='film-slide']");
+
+// 상태 -> UI 동기화 (단일 지점)
+audio.onChange((state) => {
+  const track = TRACKS.find((t) => t.id === state.currentTrackId);
+
+  playPauseBtn?.classList.toggle("is-playing", state.isPlaying);
+  if (trackTitleEl) trackTitleEl.textContent = track ? track.title : "";
+  if (progressBarEl) progressBarEl.style.width = `${state.progress * 100}%`;
+
+  waveformEl?.classList.toggle("is-animating", state.isPlaying && !state.isTransitioning);
+  waveformEl?.classList.toggle("is-transitioning", state.isTransitioning);
+
+  songTabEls.forEach((el) => {
+    el.classList.toggle("is-active", el.dataset.trackId === state.currentTrackId);
+  });
+  filmSlideEls.forEach((el) => {
+    el.classList.toggle("is-active", el.dataset.trackId === state.currentTrackId);
+  });
+});
+
+// 이벤트 바인딩
+playPauseBtn?.addEventListener("click", () => audio.togglePlay());
+
+songTabEls.forEach((el) => {
+  el.addEventListener("click", () => audio.play(el.dataset.trackId));
+});
+
+filmSlideEls.forEach((el) => {
+  el.addEventListener("click", () => audio.play(el.dataset.trackId));
+});
+
+// 자동재생 정책상 첫 곡 재생은 사용자의 첫 클릭 이후에 호출 권장
+// audio.play(TRACKS[0].id);
+```
+
+### 7-6. 참고
+- 각 `[data-role]`, `[data-track-id]` 셀렉터는 실제 마크업 구조에 맞춰 조정
+- 오디오 파일은 1분 하이라이트 버전(`*_short.mp3`)을 `audio/` 폴더에 배치
+- 자동재생 정책(브라우저 정책상 사용자 상호작용 이전 재생 제한)으로 인해 페이지 최초 진입 시 자동 재생은 권장하지 않음
+
