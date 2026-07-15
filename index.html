@@ -183,7 +183,7 @@
     color: rgba(11, 35, 64, 0.65);
   }
 
-  /* ---------- Film strip ---------- */
+  /* ---------- Card slider ---------- */
   .filmstrip {
     flex: 1;
     display: flex;
@@ -215,22 +215,22 @@
     touch-action: pan-y;
   }
 
+  /* 필름 스프로킷 홀 대신 겹쳐진 두 겹의 파도 곡선(SVG 타일)으로 여름 바다를 표현 */
   .fs-viewport::before,
   .fs-viewport::after {
     content: "";
     position: absolute;
     left: 0;
     right: 0;
-    height: 20px;
-    background-color: var(--navy-900);
-    background-image: radial-gradient(circle, var(--foam-50) 0 6px, transparent 7px);
-    background-size: 34px 100%;
+    height: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 22' preserveAspectRatio='none'%3E%3Cpath d='M0,11 Q20,2 40,11 T80,11 V22 H0 Z' fill='%231E88A6' fill-opacity='0.55'/%3E%3Cpath d='M0,16 Q20,9 40,16 T80,16 V22 H0 Z' fill='%2329B6D8' fill-opacity='0.9'/%3E%3C/svg%3E");
     background-repeat: repeat-x;
-    background-position: center;
+    background-size: 80px 22px;
+    background-position: left center;
     z-index: 2;
   }
   .fs-viewport::before { top: 0; }
-  .fs-viewport::after { bottom: 0; }
+  .fs-viewport::after { bottom: 0; transform: scaleY(-1); }
 
   .fs-track {
     display: flex;
@@ -252,8 +252,8 @@
     width: 72%;
     max-width: 420px;
     margin: 0 10px;
-    opacity: 0.45;
-    transform: scale(0.9);
+    opacity: 0.5;
+    transform: scale(0.75);
     transition: opacity 300ms ease, transform 300ms ease;
     border-radius: 14px;
     overflow: hidden;

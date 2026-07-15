@@ -15,12 +15,13 @@ a browser (double-click / `file://`) to view — there is nothing to build, lint
   right of the sidebar, with a small SPRING/**SUMMER**/FALL/WINTER caption line. Clicking "여름" in
   the sidebar hides this screen entirely and reveals the SUMMER page.
 - **Header**: LUCY logo + inline SVG sea/sky/wave decoration on a bright gradient.
-- **Film strip slider** (core interaction): 4 songs — 조깅, 수박깨러가, Straight Line, Flare — each
-  a "frame" with album-art placeholder + short blurb. Navigable by drag/swipe, arrow buttons, or by
-  clicking a peeking neighbor frame. Sprocket-hole detailing on the strip's top/bottom edge
-  reinforces the "watch songs like a film reel" concept.
-- **Footer BGM player**: per-song tabs, play/pause, animated waveform, fake progress bar. The film
-  strip and footer player share **one** current-song state, so driving either one keeps both in sync.
+- **Card slider** (core interaction): 4 songs — 조깅, 수박깨러가, Straight Line, Flare — each a
+  "frame" with album-art placeholder + short blurb. Navigable by drag/swipe, arrow buttons, or by
+  clicking a peeking neighbor frame; non-centered cards sit at 75% scale / 50% opacity for a
+  layered, receding side-card look. The viewport's top/bottom edges are framed by a two-tone SVG
+  wave tile (ocean palette) instead of any film-reel/sprocket-hole motif.
+- **Footer BGM player**: per-song tabs, play/pause, animated waveform, fake progress bar. The card
+  slider and footer player share **one** current-song state, so driving either one keeps both in sync.
 - Each song has its own color theme (accent, gradient, waveform colors) and waveform motion
   character: 조깅 = calm/even (cool morning sea), 수박깨러가 = bouncy/bright (midday, watermelon
   field), Straight Line = slow/flat/dreamy (pastel), Flare = fast/jagged (storm).
