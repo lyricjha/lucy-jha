@@ -109,7 +109,7 @@
   #placeholder-view[hidden] { display: none; }
 
   #placeholder-view .cover-logo {
-    font-size: 80px;
+    font-size: 160px;
     font-family: var(--font-display);
     letter-spacing: 15px;
     margin-bottom: 20px;
@@ -122,7 +122,7 @@
   #placeholder-view .cover-seasons {
     display: flex;
     gap: 18px;
-    font-size: 12px;
+    font-size: 24px;
     letter-spacing: 0.35em;
     text-transform: uppercase;
     color: rgba(20, 36, 58, 0.35);
@@ -477,10 +477,7 @@
         <!-- 방법 A의 깔끔한 영문 텍스트 로고로 대체하였습니다 -->
         <h1 class="cover-logo">LUCY</h1>
         <div class="cover-seasons">
-          <span>Spring</span>
-          <span class="is-live">Summer</span>
-          <span>Fall</span>
-          <span>Winter</span>
+          <span class="is-live">By Season</span>
         </div>
       </section>
 
@@ -492,8 +489,8 @@
             <path d="M0,150 Q100,130 200,150 T400,150 T600,150 T800,150 V200 H0 Z" fill="rgba(255,255,255,0.35)"></path>
             <path d="M0,170 Q100,155 200,170 T400,170 T600,170 T800,170 V200 H0 Z" fill="rgba(11,35,64,0.12)"></path>
           </svg>
-          <h1 class="logo">LUCY</h1>
-          <p class="logo-sub">Summer Sessions</p>
+          <h1 class="logo">PANORAMA</h1>
+          <p class="logo-sub">The 1st MINI ALBUM</p>
         </header>
 
         <section class="filmstrip">
@@ -503,7 +500,7 @@
               <!-- 1. 필름 슬라이드 카드 (data-role과 data-track-id 연동 완료) -->
               <li class="frame" data-role="film-slide" data-track-id="jogging" data-song="jogging">
                 <div class="frame-art">
-                  <img class="frame-art-cover" src="assets/panorama-cover.png" alt="LUCY 1st Mini Album PANORAMA 커버">
+                  <img class="frame-art-cover" src="assets/jogging-cover.png" alt="LUCY 조깅 커버">
                 </div>
                 <div class="frame-card">
                   <h3 data-role="track-title">조깅</h3>
@@ -511,21 +508,27 @@
                 </div>
               </li>
               <li class="frame" data-role="film-slide" data-track-id="watermelon" data-song="watermelon">
-                <div class="frame-art">🍉</div>
+                <div class="frame-art">
+                  <img class="frame-art-cover" src="assets/watermelon-cover.png" alt="LUCY 수박깨러가 커버">
+                </div>
                 <div class="frame-card">
                   <h3>수박깨러가</h3>
                   <p>한낮의 싱그러움, 수박밭 옆 바다를 떠올리게 하는 무드.</p>
                 </div>
               </li>
               <li class="frame" data-role="film-slide" data-track-id="straightline" data-song="straightline">
-                <div class="frame-art">〰️</div>
+                <div class="frame-art">
+                  <img class="frame-art-cover" src="assets/straightline-cover.png" alt="LUCY Straight Line 커버">
+                </div>
                 <div class="frame-card">
                   <h3>Straight Line</h3>
                   <p>몽환적인 파스텔 톤으로 흘러가는 잔잔한 트랙.</p>
                 </div>
               </li>
               <li class="frame" data-role="film-slide" data-track-id="flare" data-song="flare">
-                <div class="frame-art">🌩️</div>
+                <div class="frame-art">
+                  <img class="frame-art-cover" src="assets/flare-cover.png" alt="LUCY Flare 커버">
+                </div>
                 <div class="frame-card">
                   <h3>Flare</h3>
                   <p>흐린 스톰 톤 위로 터지는 강렬한 플레어.</p>
