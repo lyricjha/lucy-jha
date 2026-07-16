@@ -717,11 +717,13 @@
 
   // ---------- Drag / swipe ----------
   var SONG_IDS = ["jogging", "watermelon", "straightline", "flare"];
+  var DRAG_THRESHOLD = 6; // 이 값보다 적게 움직이면 드래그가 아니라 카드 클릭(곡 재생)으로 취급한다
   var dragStartX = 0;
   var dragStartOffset = 0;
   var dragBaseIndex = 0;
   var dragLiveIndex = 0;
   var dragStepDistance = 0;
+  var pendingPointerId = null;
 
   function getCurrentTranslateX() {
     var transform = window.getComputedStyle(fsTrack).transform;
@@ -742,19 +744,29 @@
   }
 
   fsTrack.addEventListener("pointerdown", function (e) {
-    state.isDragging = true;
+    // 여기서는 아직 드래그로 확정하지 않는다(포인터 캡처를 바로 걸면 이후의
+    // 네이티브 click 이벤트 타깃이 fsTrack으로 재지정되어, 개별 카드를 그냥
+    // 클릭했을 때 곡이 재생되는 기능이 동작하지 않게 된다). 실제 이동량이
+    // DRAG_THRESHOLD를 넘는 순간에만 pointermove에서 드래그로 전환한다.
+    pendingPointerId = e.pointerId;
     dragStartX = e.clientX;
     dragStartOffset = getCurrentTranslateX();
     dragBaseIndex = state.currentSongIndex;
     dragLiveIndex = state.currentSongIndex;
     dragStepDistance = frames.length > 1 ? (frames[1].offsetLeft - frames[0].offsetLeft) : 0;
-    fsTrack.classList.add("is-dragging");
-    fsTrack.setPointerCapture(e.pointerId);
   });
 
   fsTrack.addEventListener("pointermove", function (e) {
-    if (!state.isDragging) return;
+    if (pendingPointerId === null) return;
     var delta = e.clientX - dragStartX;
+
+    if (!state.isDragging) {
+      if (Math.abs(delta) < DRAG_THRESHOLD) return;
+      state.isDragging = true;
+      fsTrack.classList.add("is-dragging");
+      fsTrack.setPointerCapture(pendingPointerId);
+    }
+
     fsTrack.style.transform = "translateX(" + (dragStartOffset + delta) + "px)";
 
     // 드래그 도중 이웃 카드가 화면 중앙을 지나가는 순간, 실시간으로 그 카드의
@@ -770,6 +782,7 @@
   });
 
   function endDrag(e) {
+    pendingPointerId = null;
     if (!state.isDragging) return;
     state.isDragging = false;
     fsTrack.classList.remove("is-dragging");
