@@ -109,14 +109,16 @@
   #placeholder-view[hidden] { display: none; }
 
   #placeholder-view .cover-logo {
-    font-size: 160px;
-    font-family: var(--font-display);
-    letter-spacing: 15px;
     margin-bottom: 20px;
     text-align: center;
     width: 100%;
-    color: var(--navy-900);
     animation: cover-fade-in 900ms ease both;
+  }
+
+  #placeholder-view .cover-logo-img {
+    height: 240px;
+    max-width: 90%;
+    width: auto;
   }
 
   #placeholder-view .cover-seasons {
@@ -496,7 +498,7 @@
     <main class="main-view">
       <section id="placeholder-view">
         <!-- 방법 A의 깔끔한 영문 텍스트 로고로 대체하였습니다 -->
-        <h1 class="cover-logo">LUCY</h1>
+        <h1 class="cover-logo"><img class="cover-logo-img" src="assets/lucy-logo.png" alt="LUCY"></h1>
         <div class="cover-seasons">
           <span class="is-live">By Season</span>
         </div>
