@@ -162,6 +162,27 @@
     height: 100%;
   }
 
+  .back-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 35, 64, 0.2);
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--navy-900);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+  }
+  .back-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
   .logo {
     position: relative;
     z-index: 1;
@@ -453,21 +474,21 @@
     <nav class="sidebar" aria-label="계절 선택">
       <button class="season-btn" data-season="spring" disabled aria-disabled="true">
         <span class="glyph">🔒</span>
-        <span>봄</span>
+        <span>Spring</span>
         <span class="caption">Soon</span>
       </button>
       <button class="season-btn" data-season="summer" aria-pressed="false">
         <span class="glyph">☀️</span>
-        <span>여름</span>
+        <span>Summer</span>
       </button>
       <button class="season-btn" data-season="fall" disabled aria-disabled="true">
         <span class="glyph">🔒</span>
-        <span>가을</span>
+        <span>Fall</span>
         <span class="caption">Soon</span>
       </button>
       <button class="season-btn" data-season="winter" disabled aria-disabled="true">
         <span class="glyph">🔒</span>
-        <span>겨울</span>
+        <span>Winter</span>
         <span class="caption">Soon</span>
       </button>
     </nav>
@@ -489,6 +510,7 @@
             <path d="M0,150 Q100,130 200,150 T400,150 T600,150 T800,150 V200 H0 Z" fill="rgba(255,255,255,0.35)"></path>
             <path d="M0,170 Q100,155 200,170 T400,170 T600,170 T800,170 V200 H0 Z" fill="rgba(11,35,64,0.12)"></path>
           </svg>
+          <button class="back-btn" data-role="back-to-cover" aria-label="처음 화면으로">← Home</button>
           <h1 class="logo">PANORAMA</h1>
           <p class="logo-sub">The 1st MINI ALBUM</p>
         </header>
@@ -588,6 +610,9 @@
     }
   });
 
+  var backBtn = document.querySelector("[data-role='back-to-cover']");
+  if (backBtn) backBtn.addEventListener("click", showCoverScreen);
+
   function showSummerPage() {
     placeholderView.hidden = true;
     summerPage.hidden = false;
@@ -597,6 +622,14 @@
     requestAnimationFrame(function () {
       positionTrack(false);
       resizeCanvas();
+    });
+  }
+
+  function showCoverScreen() {
+    summerPage.hidden = true;
+    placeholderView.hidden = false;
+    seasonButtons.forEach(function (btn) {
+      btn.setAttribute("aria-pressed", "false");
     });
   }
 
